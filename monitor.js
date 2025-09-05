@@ -55,8 +55,8 @@ const createTransporter = () => {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
       }
     });
   }
@@ -118,7 +118,7 @@ class AquaMonMonitoringService {
       console.log('✅ Email configuration successful');
     } catch (error) {
       console.error('❌ Email configuration failed:', error.message);
-      throw error;
+      console.log('⚠️  Service will continue without email notifications');
     }
   }
 
@@ -389,7 +389,7 @@ class AquaMonMonitoringService {
       }
 
       const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from: process.env.SMTP_USER,
         to: recipientEmail,
         subject: `🚨 AquaMon Alert: Device ${deviceId} is Offline`,
         html: `
@@ -414,7 +414,8 @@ class AquaMonMonitoringService {
       console.log(`📧 Offline notification sent to ${recipientEmail} for device ${deviceId}`);
       serviceStats.notificationsSent++;
     } catch (error) {
-      console.error('❌ Error sending offline notification:', error);
+      console.error('❌ Error sending offline notification:', error.message);
+      console.log('⚠️  Continuing without email notification');
       serviceStats.errors++;
     }
   }
@@ -430,7 +431,7 @@ class AquaMonMonitoringService {
       }
 
       const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from: process.env.SMTP_USER,
         to: recipientEmail,
         subject: `✅ AquaMon Recovery: Device ${deviceId} is Back Online`,
         html: `
@@ -454,7 +455,8 @@ class AquaMonMonitoringService {
       console.log(`📧 Recovery notification sent to ${recipientEmail} for device ${deviceId}`);
       serviceStats.notificationsSent++;
     } catch (error) {
-      console.error('❌ Error sending recovery notification:', error);
+      console.error('❌ Error sending recovery notification:', error.message);
+      console.log('⚠️  Continuing without email notification');
       serviceStats.errors++;
     }
   }
@@ -462,7 +464,7 @@ class AquaMonMonitoringService {
   async sendTestNotification(email) {
     try {
       const mailOptions = {
-        from: process.env.EMAIL_USER,
+        from: process.env.SMTP_USER,
         to: email,
         subject: `🧪 AquaMon Test Notification`,
         html: `
