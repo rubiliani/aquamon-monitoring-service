@@ -1,0 +1,27 @@
+{
+  "name": "aquamon-monitoring-service",
+  "version": "1.0.0",
+  "description": "Standalone monitoring service for AquaMon ESP32 devices",
+  "main": "index.js",
+  "scripts": {
+    "start": "node monitor.js",
+    "dev": "nodemon monitor.js",
+    "basic": "node index.js",
+    "test-notifications": "node test-user-notifications.js",
+    "test-connection": "node test-firebase-connection.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["aquamon", "monitoring", "esp32", "firebase", "notifications"],
+  "author": "AquaMon Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "firebase-admin": "^13.5.0",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.6"
+  }
+}
