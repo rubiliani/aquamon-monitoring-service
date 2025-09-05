@@ -4,7 +4,7 @@
   "description": "Standalone monitoring service for AquaMon ESP32 devices",
   "main": "index.js",
   "scripts": {
-    "start": "node simple-server.js",
+    "start": "node monitor.js",
     "monitor": "node monitor.js",
     "dev": "nodemon monitor.js",
     "basic": "node index.js",
