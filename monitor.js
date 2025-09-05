@@ -33,7 +33,7 @@ const createTransporter = () => {
   const emailService = process.env.EMAIL_SERVICE || 'gmail';
   
   if (emailService === 'sendgrid') {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'SendGrid',
       auth: {
         user: 'apikey',
@@ -41,7 +41,7 @@ const createTransporter = () => {
       }
     });
   } else if (emailService === 'mailgun') {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.mailgun.org',
       port: 587,
       secure: false,
@@ -52,7 +52,7 @@ const createTransporter = () => {
     });
   } else {
     // Default to Gmail
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
