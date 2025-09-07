@@ -205,6 +205,27 @@ class FCMService {
 
     return await this.sendNotificationToUser(aquarium.userId, notification);
   }
+
+  /**
+   * Send sensor alert notification
+   */
+  async sendSensorAlertNotification(aquariumId, aquarium, deviceId, alert) {
+    try {
+      const notification = {
+        title: alert.title,
+        body: alert.message,
+        type: 'sensor_alert',
+        aquariumId: aquariumId,
+        severity: alert.severity,
+        alertType: alert.type
+      };
+
+      return await this.sendNotificationToUser(aquarium.userId, notification);
+    } catch (error) {
+      console.error('❌ Error sending sensor alert notification:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 module.exports = FCMService;

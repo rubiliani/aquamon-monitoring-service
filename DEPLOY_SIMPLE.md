@@ -1,3 +1,7 @@
+
+
+
+
 # Simple Deployment Guide for AquaMon Monitoring Service
 
 ## Option 1: Render (Recommended - Free Tier Available)

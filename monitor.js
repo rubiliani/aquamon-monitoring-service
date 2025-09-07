@@ -345,6 +345,9 @@ class AquaMonMonitoringService {
       await this.handleDeviceOffline(aquariumId, aquarium, deviceId, `No data for ${Math.round(timeSinceLastUpdate / 60000)} minutes`, settings);
     } else {
       await this.handleDeviceOnline(aquariumId, aquarium, deviceId, settings);
+      
+      // Check sensor thresholds
+      await this.checkSensorThresholds(aquariumId, aquarium, deviceId, latestData, settings);
     }
   }
 
@@ -398,6 +401,115 @@ class AquaMonMonitoringService {
       
       // Create recovery notification in database
       await this.createRecoveryNotification(aquariumId, aquarium, deviceId);
+    }
+  }
+
+  async checkSensorThresholds(aquariumId, aquarium, deviceId, sensorData, settings) {
+    try {
+      const thresholds = settings.thresholds;
+      const alertsEnabled = settings.alerts_enabled;
+      
+      if (!thresholds || !alertsEnabled) {
+        return;
+      }
+
+      const { temperature, ph, water_level } = sensorData;
+      const alerts = [];
+
+      // Check temperature thresholds
+      if (alertsEnabled.temperature && temperature !== undefined) {
+        if (temperature < thresholds.temperature_min) {
+          alerts.push({
+            type: 'temperature',
+            severity: 'high',
+            title: '🌡️ Low Temperature Alert',
+            message: `Temperature is ${temperature}°C, below minimum threshold of ${thresholds.temperature_min}°C`,
+            value: temperature,
+            threshold: thresholds.temperature_min
+          });
+        } else if (temperature > thresholds.temperature_max) {
+          alerts.push({
+            type: 'temperature',
+            severity: 'high',
+            title: '🌡️ High Temperature Alert',
+            message: `Temperature is ${temperature}°C, above maximum threshold of ${thresholds.temperature_max}°C`,
+            value: temperature,
+            threshold: thresholds.temperature_max
+          });
+        }
+      }
+
+      // Check pH thresholds
+      if (alertsEnabled.ph && ph !== undefined) {
+        if (ph < thresholds.ph_min) {
+          alerts.push({
+            type: 'ph',
+            severity: 'high',
+            title: '🧪 Low pH Alert',
+            message: `pH is ${ph}, below minimum threshold of ${thresholds.ph_min}`,
+            value: ph,
+            threshold: thresholds.ph_min
+          });
+        } else if (ph > thresholds.ph_max) {
+          alerts.push({
+            type: 'ph',
+            severity: 'high',
+            title: '🧪 High pH Alert',
+            message: `pH is ${ph}, above maximum threshold of ${thresholds.ph_max}`,
+            value: ph,
+            threshold: thresholds.ph_max
+          });
+        }
+      }
+
+      // Check water level thresholds
+      if (alertsEnabled.waterLevel && water_level !== undefined) {
+        if (water_level < thresholds.water_level_min) {
+          alerts.push({
+            type: 'waterLevel',
+            severity: 'critical',
+            title: '💧 Low Water Level Alert',
+            message: `Water level is ${water_level}%, below minimum threshold of ${thresholds.water_level_min}%`,
+            value: water_level,
+            threshold: thresholds.water_level_min
+          });
+        } else if (water_level > thresholds.water_level_max) {
+          alerts.push({
+            type: 'waterLevel',
+            severity: 'high',
+            title: '💧 High Water Level Alert',
+            message: `Water level is ${water_level}%, above maximum threshold of ${thresholds.water_level_max}%`,
+            value: water_level,
+            threshold: thresholds.water_level_max
+          });
+        }
+      }
+
+      // Process alerts
+      for (const alert of alerts) {
+        await this.handleSensorAlert(aquariumId, aquarium, deviceId, alert);
+      }
+
+    } catch (error) {
+      console.error('❌ Error checking sensor thresholds:', error);
+    }
+  }
+
+  async handleSensorAlert(aquariumId, aquarium, deviceId, alert) {
+    try {
+      console.log(`🚨 Sensor Alert: ${alert.title} - ${alert.message}`);
+
+      // Send FCM push notification
+      await fcmService.sendSensorAlertNotification(aquariumId, aquarium, deviceId, alert);
+
+      // Send email notification
+      await this.sendSensorAlertEmail(aquariumId, aquarium, deviceId, alert);
+      
+      // Create notification in database for web app
+      await this.createSensorAlertNotification(aquariumId, aquarium, deviceId, alert);
+
+    } catch (error) {
+      console.error('❌ Error handling sensor alert:', error);
     }
   }
 
@@ -611,6 +723,70 @@ class AquaMonMonitoringService {
     } catch (error) {
       console.error('❌ Error getting devices status:', error);
       throw error;
+    }
+  }
+
+  async sendSensorAlertEmail(aquariumId, aquarium, deviceId, alert) {
+    try {
+      const recipientEmail = aquarium.userEmail || process.env.ADMIN_EMAIL;
+      
+      if (!recipientEmail) {
+        console.log(`⚠️ No email address found for user ${aquarium.userId}, skipping sensor alert notification`);
+        return;
+      }
+
+      const mailOptions = {
+        from: process.env.SMTP_USER,
+        to: recipientEmail,
+        subject: `🚨 AquaMon Alert: ${alert.title}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #dc2626;">${alert.title}</h2>
+            <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; margin: 16px 0;">
+              <p><strong>Aquarium:</strong> ${aquarium.name}</p>
+              <p><strong>Location:</strong> ${aquarium.location}</p>
+              <p><strong>Device ID:</strong> ${deviceId}</p>
+              <p><strong>Alert:</strong> ${alert.message}</p>
+              <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            <p>Please check your aquarium parameters and take appropriate action.</p>
+            <p style="color: #6b7280; font-size: 14px;">
+              This is an automated message from AquaMon Monitoring Service.
+            </p>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log(`📧 Sensor alert notification sent to ${recipientEmail} for ${alert.type} alert`);
+      serviceStats.notificationsSent++;
+    } catch (error) {
+      console.error('❌ Error sending sensor alert notification:', error.message);
+      console.log('⚠️  Continuing without email notification');
+      serviceStats.errors++;
+    }
+  }
+
+  async createSensorAlertNotification(aquariumId, aquarium, deviceId, alert) {
+    try {
+      const notification = {
+        userId: aquarium.userId,
+        aquariumId: aquariumId,
+        aquariumName: aquarium.name,
+        type: alert.type,
+        severity: alert.severity,
+        title: alert.title,
+        message: alert.message,
+        timestamp: Date.now(),
+        isRead: false,
+        deviceId: deviceId
+      };
+
+      await database.ref('alerts').push(notification);
+      console.log(`📝 Sensor alert notification created: ${alert.title}`);
+    } catch (error) {
+      console.error('❌ Error creating sensor alert notification:', error);
+      serviceStats.errors++;
     }
   }
 }
