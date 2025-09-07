@@ -2,7 +2,6 @@ const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const express = require('express');
-const FCMService = require('./fcmService');
 require('dotenv').config();
 
 const app = express();
@@ -29,8 +28,6 @@ admin.initializeApp({
 
 const database = admin.database();
 
-// Initialize FCM service
-const fcmService = new FCMService();
 
 // Email configuration with multiple providers support
 const createTransporter = () => {
@@ -369,8 +366,6 @@ class AquaMonMonitoringService {
     console.log(`🔴 Device ${deviceId} is OFFLINE: ${reason}`);
     this.offlineDevices.add(deviceKey);
 
-    // Send FCM push notification
-    await fcmService.sendDeviceOfflineNotification(aquariumId, aquarium, deviceId, reason);
 
     // Send email notification
     await this.sendOfflineNotification(aquariumId, aquarium, deviceId, reason);
@@ -393,8 +388,6 @@ class AquaMonMonitoringService {
         return;
       }
       
-      // Send FCM push notification
-      await fcmService.sendDeviceOnlineNotification(aquariumId, aquarium, deviceId);
 
       // Send recovery notification
       await this.sendRecoveryNotification(aquariumId, aquarium, deviceId);
@@ -499,8 +492,6 @@ class AquaMonMonitoringService {
     try {
       console.log(`🚨 Sensor Alert: ${alert.title} - ${alert.message}`);
 
-      // Send FCM push notification
-      await fcmService.sendSensorAlertNotification(aquariumId, aquarium, deviceId, alert);
 
       // Send email notification
       await this.sendSensorAlertEmail(aquariumId, aquarium, deviceId, alert);
