@@ -48,3 +48,4 @@ if (allSet) {
 console.log('');
 console.log('🔗 Firebase Database URL should be:');
 console.log('https://aquamon-7a6bf-default-rtdb.europe-west1.firebasedatabase.app');
+

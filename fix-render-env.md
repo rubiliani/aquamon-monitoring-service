@@ -50,3 +50,4 @@ The main missing variable is:
 - **FIREBASE_DATABASE_URL** = `https://aquamon-7a6bf-default-rtdb.europe-west1.firebasedatabase.app`
 
 Add this to your Render environment variables and the service should start working!
+

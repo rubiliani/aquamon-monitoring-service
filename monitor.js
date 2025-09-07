@@ -318,7 +318,7 @@ class AquaMonMonitoringService {
 
     if (!sensorData) {
       console.log(`⚠️ No sensor data found for device ${deviceId}`);
-      await this.handleDeviceOffline(aquariumId, aquarium, deviceId, 'No sensor data found');
+      await this.handleDeviceOffline(aquariumId, aquarium, deviceId, 'No sensor data found', settings);
       return;
     }
 
@@ -326,7 +326,7 @@ class AquaMonMonitoringService {
     const dataPoints = Object.values(sensorData);
     if (dataPoints.length === 0) {
       console.log(`⚠️ No data points found for device ${deviceId}`);
-      await this.handleDeviceOffline(aquariumId, aquarium, deviceId, 'No data points found');
+      await this.handleDeviceOffline(aquariumId, aquarium, deviceId, 'No data points found', settings);
       return;
     }
 
@@ -338,18 +338,25 @@ class AquaMonMonitoringService {
     console.log(`📊 Device ${deviceId}: Last update ${Math.round(timeSinceLastUpdate / 1000)}s ago`);
 
     if (timeSinceLastUpdate > offlineTimeoutMs) {
-      await this.handleDeviceOffline(aquariumId, aquarium, deviceId, `No data for ${Math.round(timeSinceLastUpdate / 60000)} minutes`);
+      await this.handleDeviceOffline(aquariumId, aquarium, deviceId, `No data for ${Math.round(timeSinceLastUpdate / 60000)} minutes`, settings);
     } else {
-      await this.handleDeviceOnline(aquariumId, aquarium, deviceId);
+      await this.handleDeviceOnline(aquariumId, aquarium, deviceId, settings);
     }
   }
 
-  async handleDeviceOffline(aquariumId, aquarium, deviceId, reason) {
+  async handleDeviceOffline(aquariumId, aquarium, deviceId, reason, settings) {
     const deviceKey = `${aquariumId}-${deviceId}`;
     
     // Check if we already notified about this device being offline
     if (this.offlineDevices.has(deviceKey)) {
       return; // Already offline, no need to notify again
+    }
+
+    // Check if device connectivity alerts are enabled for this aquarium
+    if (!settings?.alerts_enabled?.maintenance) {
+      console.log(`ℹ️ Device connectivity alerts disabled for aquarium ${aquariumId}, skipping notification`);
+      this.offlineDevices.add(deviceKey); // Still mark as offline to prevent repeated checks
+      return;
     }
 
     console.log(`🔴 Device ${deviceId} is OFFLINE: ${reason}`);
@@ -362,13 +369,19 @@ class AquaMonMonitoringService {
     await this.createOfflineNotification(aquariumId, aquarium, deviceId, reason);
   }
 
-  async handleDeviceOnline(aquariumId, aquarium, deviceId) {
+  async handleDeviceOnline(aquariumId, aquarium, deviceId, settings) {
     const deviceKey = `${aquariumId}-${deviceId}`;
     
     // Check if device was previously offline
     if (this.offlineDevices.has(deviceKey)) {
       console.log(`🟢 Device ${deviceId} is back ONLINE`);
       this.offlineDevices.delete(deviceKey);
+      
+      // Check if device connectivity alerts are enabled for this aquarium
+      if (!settings?.alerts_enabled?.maintenance) {
+        console.log(`ℹ️ Device connectivity alerts disabled for aquarium ${aquariumId}, skipping recovery notification`);
+        return;
+      }
       
       // Send recovery notification
       await this.sendRecoveryNotification(aquariumId, aquarium, deviceId);
