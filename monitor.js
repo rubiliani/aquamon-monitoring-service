@@ -245,7 +245,7 @@ class AquaMonMonitoringService {
           userId || '1yYiDwzopTOfTMqSURaeoZP7zdn1', // Default to test user
           '🧪 AquaMon Test Push Notification',
           'This is a test push notification from the monitoring service!',
-          { type: 'test', timestamp: Date.now().toString() }
+          { type: 'test', timestamp: Math.floor(Date.now() / 1000).toString() }
         );
         res.json({ message: 'Test push notification sent successfully', result });
       } catch (error) {
@@ -672,7 +672,7 @@ class AquaMonMonitoringService {
         severity: 'high',
         title: `Device ${deviceId} is Offline`,
         message: `Device ${deviceId} has been offline for ${reason}. Please check the device connection.`,
-        timestamp: Date.now(),
+        timestamp: Math.floor(Date.now() / 1000),
         isRead: false,
         deviceId: deviceId,
         reason: reason
@@ -696,7 +696,7 @@ class AquaMonMonitoringService {
         severity: 'low',
         title: `Device ${deviceId} is Back Online`,
         message: `Device ${deviceId} has recovered and is now sending data normally.`,
-        timestamp: Date.now(),
+        timestamp: Math.floor(Date.now() / 1000),
         isRead: false,
         deviceId: deviceId
       };
@@ -817,7 +817,7 @@ class AquaMonMonitoringService {
         severity: alert.severity,
         title: alert.title,
         message: alert.message,
-        timestamp: Date.now(),
+        timestamp: Math.floor(Date.now() / 1000),
         isRead: false,
         deviceId: deviceId
       };

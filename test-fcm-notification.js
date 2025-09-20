@@ -67,7 +67,7 @@ async function testFCMNotification() {
       },
       data: {
         type: 'test',
-        timestamp: Date.now().toString(),
+        timestamp: Math.floor(Date.now() / 1000).toString(),
         source: 'monitoring-service'
       },
       tokens: targetTokens,

@@ -69,7 +69,7 @@ async function testDeviceOfflineNotification() {
         deviceId: 'ESP32-001',
         reason: 'No data for 15 minutes',
         severity: 'high',
-        timestamp: Date.now().toString()
+        timestamp: Math.floor(Date.now() / 1000).toString()
       },
       tokens: targetTokens,
     };
@@ -94,7 +94,7 @@ async function testDeviceOfflineNotification() {
         aquariumId: 'test-aquarium-123',
         deviceId: 'ESP32-001',
         severity: 'low',
-        timestamp: Date.now().toString()
+        timestamp: Math.floor(Date.now() / 1000).toString()
       },
       tokens: targetTokens,
     };
