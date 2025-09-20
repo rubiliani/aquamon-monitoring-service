@@ -238,6 +238,43 @@ class AquaMonMonitoringService {
       }
     });
 
+    app.post('/test-push-notification', async (req, res) => {
+      try {
+        const { userId } = req.body;
+        const result = await fcmService.sendNotification(
+          userId || '1yYiDwzopTOfTMqSURaeoZP7zdn1', // Default to test user
+          '🧪 AquaMon Test Push Notification',
+          'This is a test push notification from the monitoring service!',
+          { type: 'test', timestamp: Date.now().toString() }
+        );
+        res.json({ message: 'Test push notification sent successfully', result });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
+    app.post('/test-device-offline', async (req, res) => {
+      try {
+        const { userId, aquariumId, deviceId } = req.body;
+        const testAquarium = {
+          userId: userId || '1yYiDwzopTOfTMqSURaeoZP7zdn1',
+          name: 'Test Aquarium',
+          location: 'Test Location'
+        };
+        
+        const result = await fcmService.sendDeviceOfflineNotification(
+          aquariumId || 'test-aquarium-123',
+          testAquarium,
+          deviceId || 'ESP32-001',
+          'No data for 15 minutes (test)'
+        );
+        
+        res.json({ message: 'Test device offline notification sent successfully', result });
+      } catch (error) {
+        res.status(500).json({ error: error.message });
+      }
+    });
+
     app.listen(PORT, () => {
       console.log(`🌐 Web server running on port ${PORT}`);
     });
